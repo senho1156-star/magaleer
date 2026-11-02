@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://senho1156_db_user:YOUR_PASSWORD@cluster0.mongodb.net/magaleer?retryWrites=true&w=majority"; 
+const MONGO_URI = process.env.MONGO_URI; 
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("MongoDB Connected..."))
@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
-// Root Route (UptimeRobot-க்காகச் சேர்க்கப்பட்டது)
+// Root Route (UptimeRobot & Render Health Check-க்காக)
 app.get('/', (req, res) => {
   res.status(200).send('Server is running successfully!');
 });
