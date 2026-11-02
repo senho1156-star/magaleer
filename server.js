@@ -9,7 +9,6 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB Connection
-// Render Environment Variables-ல் MONGO_URI கொடுத்திருந்தால் அதுவே எடுத்துக்கொள்ளும்
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://senho1156_db_user:YOUR_PASSWORD@cluster0.mongodb.net/magaleer?retryWrites=true&w=majority"; 
 
 mongoose.connect(MONGO_URI)
@@ -26,6 +25,11 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', UserSchema);
+
+// Root Route (UptimeRobot-க்காகச் சேர்க்கப்பட்டது)
+app.get('/', (req, res) => {
+  res.status(200).send('Server is running successfully!');
+});
 
 // Submit Data Endpoint
 app.post('/submit-data', async (req, res) => {
@@ -52,11 +56,6 @@ app.post('/submit-data', async (req, res) => {
     console.error("Error during submission:", error);
     res.status(500).send({ success: false, message: "Internal Server Error" });
   }
-});
-
-// Root Route to prevent 404 (Critical for Render/UptimeRobot)
-app.get('/', (req, res) => {
-  res.send('Server is running successfully!');
 });
 
 const PORT = process.env.PORT || 3000;
